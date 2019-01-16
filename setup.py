@@ -8,7 +8,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="nrc_adams_py",
-    version="0.0.1",
+    version="0.0.2",
     author="Brad Fox",
     author_email="bradley.fox@avfintellitech.com",
     description="Python Class connect to NRC ADAMS API",
