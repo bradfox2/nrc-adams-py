@@ -17,5 +17,7 @@ Data will change over the co  urse of the day as the NRC issues new documents. F
 Search result sets for all APIs in this guide are limited to 1,000 results. If more than 1,0000 documents match the search criteria, then the following will occur:
 
 *only the first 1,000 matches will be returned, 
+
 *the <matches>. . .</matches> field in the result set will be set to LocalizedMessage{key='search.documents.limit.exceed.message', params=[1000]} and 
+
 *the <count>. . .</count>field in the result set will be set to 1000.
