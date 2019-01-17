@@ -5,7 +5,7 @@ from xml.etree import ElementTree
 class Payload(object):
     '''A group of General Parameters that will make up a payload for GET request.'''
     def __init__(self, q, tab, qn = None, s = None, so = None):
-        self._q = q
+        self._q = q.replace(" ","")
         self._tab = tab
         self._qn = qn
         self._s = s
@@ -27,8 +27,7 @@ class Payload(object):
 
 ## q, tab, qn, s, so
 
-
-q = '''(mode:sections,sections:(filters:(public-library:!t),properties_search_any:!(!(DocumentType,ends,'Enforcement+Action','')),single_content_search:'Gamma+Knife'))'''
+q = '''(mode:sections,sections:(filters:(public-library:!t),properties_search:!(!('$title',infolder,'Palo+Verde',''))))'''
 
 #print(q)
 
