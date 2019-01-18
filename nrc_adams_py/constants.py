@@ -29,4 +29,3 @@ DATA_PARAMETERS = DATA_PARAMETERS + '''!(DocumentType,eq,'Part+21+Correspondence
 #Use either the Content Search or Advanced Search, but with !(DocumentType,[infolder|starts],'inspection+report',''),!(DocketNumber,[infolder|starts],'05000','')in the query <data_parameters>
 
 DATA_PARAMETERS = DATA_PARAMETERS + '''!(DocumentType,[infolder|starts],'inspection+report',''),!(DocketNumber,[infolder|starts],'05000','')'''
-
