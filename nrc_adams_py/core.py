@@ -173,7 +173,9 @@ if __name__ == '__main__':
     a = Options()
     a
 
-    b = q(properties_search_type= 'properties_search_any', properties_search=[['AuthorName','starts','Macfarlane'], ['DocumentType', 'starts', 'Speech']], options = a)
+    b = q(properties_search_type= 'properties_search_any', properties_search=[['DocumentType', 'starts', "'inspection+report'"],
+    ['DocketNumber', 'starts', "'05000'"],
+    ['DocumentDate', 'range', "(left:'04/01/2013',right:'05/01/2013')"]], options = a)
     b
 
     x = AdamsSearch(b, 'advanced-search-pars')
