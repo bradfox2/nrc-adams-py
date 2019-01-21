@@ -14,7 +14,7 @@ setup(
     description="Python Class connect to NRC ADAMS API",
     #long_description=long_description,
     #long_description_content_type="text/markdown",
-    #url="https://github.com/pypa/sampleproject",
+    url="https://github.com/bradfox2/nrc_adams_py",
     packages=find_packages(),
     test_suite = 'nose.collector',
     test_require = ['nose'],

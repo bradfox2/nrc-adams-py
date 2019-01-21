@@ -62,3 +62,6 @@ target/
 
 # Info
 *.pdf
+
+#pylint
+.pylintrc
