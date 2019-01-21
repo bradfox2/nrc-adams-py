@@ -1,3 +1,5 @@
+nrc_adams_py
+
 # ---> Python
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -68,4 +70,4 @@ target/
 *.pdf
 
 #pylint
-*.pylintrc
+.pylintrc
