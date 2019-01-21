@@ -1,4 +1,5 @@
-from constants import NRC_BASE_URL, CONTENT_SEARCH, ADVANCED_SEARCH, library_types, count_exceeded_str
+from nrc_adams_py.constants import NRC_BASE_URL, CONTENT_SEARCH, ADVANCED_SEARCH, library_types, count_exceeded_str
+import nrc_adams_py.constants
 import requests
 from xml.etree import ElementTree
 import xmljson, xmltodict
@@ -117,8 +118,7 @@ class q(object):
         ['DocumentDate', 'range', "(left:'04/01/2013',right:'05/01/2013')"]], options = Options())
 
     '''
-    from constants import library_types
-
+    
     def __init__(self, properties_search_type, properties_search, single_content_search = None, options = None, filters = 'public'):
         
         self._value = '(mode:sections,sections:('
@@ -220,6 +220,7 @@ class Options(object):
 
 if __name__ == '__main__':
     print("small tests")
+    print(NRC_BASE_URL)
     a = Options()
     a
 

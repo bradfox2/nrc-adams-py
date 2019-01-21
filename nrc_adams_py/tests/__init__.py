@@ -1,0 +1,1 @@
+from nrc_adams_py.tests import test_core
