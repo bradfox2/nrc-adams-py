@@ -34,3 +34,6 @@ DATA_PARAMETERS = DATA_PARAMETERS + '''!(DocumentType,[infolder|starts],'inspect
 library_types = {'public' : 'public-library:!t',
                  'legacy' : 'legacy-library:!t'}
 
+#API Count exceeded warning message
+count_exceeded_str = "LocalizedMessage{key='search.documents.limit.exceed.message', params=[1000]}"
+
