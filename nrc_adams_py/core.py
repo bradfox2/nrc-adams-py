@@ -18,23 +18,6 @@ class Payload(object):
                 's' : self._s,
                 'so' : self._so }
 
-#class GeneralParameter(object):
-#    '''General  parameters that define the scope and sorting criteria for the result set'''
-    ## q, tab, qn, s, so
-#    def __init__(self, name, value):
-#        self._name = name,
-#        self._value = value
-
-## q, tab, qn, s, so
-#(mode:
-#   sections,
-#   sections:
-#       (filters: (public-library:!t),
-#                  properties_search:!(!('$title',infolder,'Palo+Verde',''))
-#       )
-# )
-
-
 q = '''(mode:sections,sections:(filters:(public-library:!t),properties_search:!(!('$title',infolder,'Palo+Verde',''))))'''
 
 #print(q)
