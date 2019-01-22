@@ -39,6 +39,9 @@ class AdamsSearch(object):
         self.base_url = NRC_BASE_URL
         self.response_xml_tree = None
         self._response_dict = None
+        self._hit_count = None
+        self._url = None
+        self._doc_url_list = None
 
     def __repr__(self):
         return str(self.response)
@@ -50,7 +53,7 @@ class AdamsSearch(object):
                         's' : self._s,
                         'so' : self._so },
                         timeout=10)
-        if self._request.status_code != 200:
+        if self._request.ok is False:
             raise SystemError("API response code was not 200-OK")
         
         self.response_xml_tree = ElementTree.fromstring(self._request.content)
@@ -96,6 +99,21 @@ class AdamsSearch(object):
         '''List of dicts, where each dict is a document in the response.
         '''
         return self.response_dict['search']['resultset']['result']
+
+    @property
+    def hit_count(self):
+        if self._hit_count is None:
+            self._hit_count = self.response_dict['search']['count']
+            return self._hit_count
+        else:
+            return self._hit_count
+    
+    @property
+    def doc_url_list(self):
+        if self._doc_url_list is None:
+            self._doc_url_list = [[doc['DocumentTitle'], doc['URL']] for doc in self.response_documents]
+        else:
+            self._doc_url_list
 
 class q(object):
     ''' Get data parameters in the form ADAMS needs.
