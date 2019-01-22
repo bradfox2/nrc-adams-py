@@ -38,6 +38,7 @@ library_types = {'public' : 'public-library:!t',
 count_exceeded_str = "LocalizedMessage{key='search.documents.limit.exceed.message', params=[1000]}"
 
 #search fields and operators by property
+#per nrc adams developer guide appendix c
 document_properties = {
     'AccessionNumber':\
         {'content-search-pars':\
@@ -81,7 +82,7 @@ document_properties = {
         'advanced-search-pars':\
             ['starts', 'not_starts', 'eq', 'not', 'infolder','ends']
         },
-    'DocumentDateDate':\
+    'DocumentDate':\
         {'content-search-pars':\
             ['eq','gt','lt','range'], 
         'advanced-search-pars':\

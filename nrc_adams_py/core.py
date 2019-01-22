@@ -111,6 +111,8 @@ class q(object):
 
         single_content_search [str]: Search terms matched to document content.
 
+        tab [str]: Repeat parameter from AdamsSearch. Type of search to perform, either `content-search-pars` or `advanced-search-pars`.  Content search is defaulted, and is used to search for matches inside of library documents, which is via the `single_content_search` sub-parameter in the q parameter.  Else the advanced search will be used.
+
     Example:
         >>>q=q(properties_search_type= 'properties_search_any', properties_search=[['DocumentType', 'starts', "'inspection+report'"],
         ['DocketNumber', 'starts', "'05000'"],
@@ -118,7 +120,7 @@ class q(object):
 
     '''
     
-    def __init__(self, properties_search_type, properties_search, single_content_search = None, options = None, filters = 'public', tab = 'content-seach-pars'):
+    def __init__(self, properties_search_type, properties_search, single_content_search = None, options = None, filters = 'public', tab = 'content-search-pars'):
         
         self._value = '(mode:sections,sections:('
         if filters is not None:
