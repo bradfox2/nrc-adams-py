@@ -37,3 +37,96 @@ library_types = {'public' : 'public-library:!t',
 #API Count exceeded warning message
 count_exceeded_str = "LocalizedMessage{key='search.documents.limit.exceed.message', params=[1000]}"
 
+#search fields and operators by property
+document_properties = {
+    'AccessionNumber':\
+        {'content-search-pars':\
+            ['eq','not','infolder','ends'], 
+        'advanced-search-pars':\
+            ['starts', 'not_starts', 'eq', 'not', 'infolder','ends']
+        },
+    'AddresseeAffiliation':\
+        {'content-search-pars':\
+            ['eq','not','infolder','ends'], 
+        'advanced-search-pars':\
+            ['starts', 'not_starts', 'eq', 'not', 'infolder','ends']
+        },
+    'AddresseeName':\
+        {'content-search-pars':\
+            ['eq','not','infolder','ends'], 
+        'advanced-search-pars':\
+            ['starts', 'not_starts', 'eq', 'not', 'infolder','ends']
+        },
+    'AuthorAffiliation':\
+        {'content-search-pars':\
+            ['eq','not','infolder','ends'], 
+        'advanced-search-pars':\
+            ['starts', 'not_starts', 'eq', 'not', 'infolder','ends']
+        },
+    'AuthorName':\
+        {'content-search-pars':\
+            ['eq','not','infolder','ends'], 
+        'advanced-search-pars':\
+            ['starts', 'not_starts', 'eq', 'not', 'infolder','ends']
+        },
+    'CaseReferenceNumber':\
+        {'content-search-pars':\
+            ['eq','not','starts','ends', 'not_starts'], 
+        'advanced-search-pars':\
+            ['starts', 'not_starts', 'contains', 'not_contains', 'eq','not']
+        },
+    'DocketNumber':\
+        {'content-search-pars':\
+            ['eq','not','infolder','ends'], 
+        'advanced-search-pars':\
+            ['starts', 'not_starts', 'eq', 'not', 'infolder','ends']
+        },
+    'DocumentDateDate':\
+        {'content-search-pars':\
+            ['eq','gt','lt','range'], 
+        'advanced-search-pars':\
+            ['eq', 'not', 'gt', 'ge', 'lt','le','range']
+        },
+    'DocumentType':\
+        {'content-search-pars':\
+            ['eq','not','infolder','ends'], 
+        'advanced-search-pars':\
+            ['starts', 'not_starts', 'eq', 'not', 'infolder','ends']
+        },
+    'Keyword':\
+        {'content-search-pars':\
+            ['eq','not','infolder','ends'], 
+        'advanced-search-pars':\
+            ['starts', 'not_starts', 'eq', 'not', 'infolder','ends']
+        },
+    'LicenseNumber':\
+        {'content-search-pars':\
+            ['eq','not','infolder','ends'], 
+        'advanced-search-pars':\
+            ['starts', 'not_starts', 'eq', 'not', 'infolder','ends']
+        },
+    'PackageNumber':\
+        {'content-search-pars':\
+            ['eq','not','infolder','ends'], 
+        'advanced-search-pars':\
+            ['starts', 'not_starts', 'eq', 'not', 'infolder','ends']
+        },
+    'PackageNumber':\
+        {'content-search-pars':\
+            ['eq','not','infolder','ends'], 
+        'advanced-search-pars':\
+            ['starts', 'not_starts', 'eq', 'not', 'infolder','ends']
+        },
+    'PublishDatePARS':\
+         {'content-search-pars':\
+            ['eq','gt','lt','range'], 
+        'advanced-search-pars':\
+            ['eq', 'not', 'gt', 'ge', 'lt','le','range']
+        },
+     '$title':\
+        {'content-search-pars':\
+            ['eq','not','starts','ends', 'not_starts'], 
+        'advanced-search-pars':\
+            ['starts', 'not_starts', 'contains', 'not_contains', 'eq','not']
+        },
+    }

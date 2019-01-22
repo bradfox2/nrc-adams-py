@@ -1,4 +1,4 @@
-from nrc_adams_py.constants import NRC_BASE_URL, CONTENT_SEARCH, ADVANCED_SEARCH, library_types, count_exceeded_str
+from nrc_adams_py.constants import NRC_BASE_URL, CONTENT_SEARCH, ADVANCED_SEARCH, library_types, count_exceeded_str, document_properties
 import nrc_adams_py.constants
 import requests
 from xml.etree import ElementTree
@@ -95,7 +95,6 @@ class AdamsSearch(object):
     def response_documents(self):
         '''List of dicts, where each dict is a document in the response.
         '''
-        
         return self.response_dict['search']['resultset']['result']
 
 class q(object):
@@ -108,7 +107,7 @@ class q(object):
 
         properties_search_type[string]: 'properties_search_all' or 'properties_search_any'.  All performs AND search, any performs OR search.
 
-        properties_search[list]: List of lists where inner list is 3 elements. eg [[<property>, <operator>, <value>], ...]
+        properties_search[list]: List of lists where inner list is 3 elements. eg [[<property>, <operator>, <value>], ...].  The type/operator combinations are documented under nrc_adams_py.constants.document_properties
 
         single_content_search [str]: Search terms matched to document content.
 
@@ -119,7 +118,7 @@ class q(object):
 
     '''
     
-    def __init__(self, properties_search_type, properties_search, single_content_search = None, options = None, filters = 'public'):
+    def __init__(self, properties_search_type, properties_search, single_content_search = None, options = None, filters = 'public', tab = 'content-seach-pars'):
         
         self._value = '(mode:sections,sections:('
         if filters is not None:
@@ -142,6 +141,12 @@ class q(object):
         else:
             temp_value = ''
             for i, inner  in enumerate(properties_search):
+                if inner[0] not in document_properties.keys():
+                    raise ValueError("document property must be one of the specified document properties in document_properties list")
+
+                #check search operator against document properties/seach op dict
+                if inner[1] not in document_properties[inner[0]][tab]:
+                    raise ValueError("search operator must be one of the specified search operators.")
                 #dont add trailing comma at end of list
                 if i + 1 == len(properties_search):
                     temp_value += '!(' + ','.join(inner) + ",'')" 
@@ -233,4 +238,3 @@ if __name__ == '__main__':
     #print(x.response)
     print(x.url)
     print(x.response_documents[0])
-
