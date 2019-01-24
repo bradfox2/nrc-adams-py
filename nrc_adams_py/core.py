@@ -91,7 +91,7 @@ class AdamsSearch(object):
                     #raise NotImplementedError
 
                     #reint q with old values and modified properties search types
-                    q = q(properties_search_type= q._properties_search_type, properties_search=q._properties_search.append([['DocumentDate'],['lt'],[oldest_date]]), options = q._options)
+                    q = q(properties_search_type= q._properties_search_type, properties_search=q._properties_search.append([[self._s],['lt'],[oldest_date]]), options = q._options)
                     
                     init_req = requests.get(self.base_url, {'q': self._q,
                                     'tab': self._tab,
@@ -108,7 +108,7 @@ class AdamsSearch(object):
 
                         self._response_dict.update(new_dict)
 
-                        oldest_date = next(reversed(new_dict))['DocumentDate']
+                        oldest_date = next(reversed(new_dict))[self._s]
                 
                     else: 
                         raise ValueError("Request not successful")
