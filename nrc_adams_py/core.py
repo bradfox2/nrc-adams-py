@@ -1,4 +1,4 @@
-from nrc_adams_py.constants import NRC_BASE_URL, CONTENT_SEARCH, ADVANCED_SEARCH, library_types, count_exceeded_str, document_properties
+from nrc_adams_py.constants import NRC_BASE_URL, CONTENT_SEARCH, ADVANCED_SEARCH, library_types, count_exceeded_str, document_properties,DOC_URL_BASE
 import nrc_adams_py.constants
 import requests
 from xml.etree import ElementTree
@@ -8,7 +8,7 @@ import re
 class AdamsSearch(object):
     '''A single search to the NRC ADAMS API.
 
-    Attributes:
+    Args:
         q (str | q object): ADAMS q parameter either as string or q helper object.  CHR format.  
         
         tab (str): Type of search to perform, either `content-search-pars` or `advanced-search-pars`.  Content search is defaulted, and is used to search for matches inside of library documents, which is via the `single_content_search` sub-parameter in the q parameter.  Else the advanced search will be used.
@@ -21,46 +21,97 @@ class AdamsSearch(object):
 
         base_url (str): ADAMS base url, imported from constants.py.
 
+        auto_expand (int): 1000 < n < 1000000 Number of search results to return. Automatically expand the search result beyond the NRC imposed limit of 1000 entries.
+
     '''
 
-    def __init__(self, q, tab='content-search-pars', qn = None, s = None, so = None):
+    def __init__(self, q, tab='content-search-pars', qn = None, s = None, so = None, auto_expand_search = 1000):
         if isinstance(q, str):
             self._q = q.replace(" ","")
             if 'single_content_search' in q and tab != 'content-search-pars':
                 raise ValueError('Can only content search with defaulted tab value (content-search-pars).')
         else:
             self._q = str(q)
-
+        
+        #date descending to expand search
+        if auto_expand_search <= 1000:
+            self._so = so 
+            self._aes = 1000
+            self._s = s
+        else:
+            self._so = 'DESC'
+            self._aes = auto_expand_search
+            self._s = 'DocumentDate'
         self._tab = tab
         self._qn = qn
-        self._s = s
-        self._so = so
         self._request = None
         self.base_url = NRC_BASE_URL
-        self.response_xml_tree = None
+        self._response_xml_tree = None
         self._response_dict = None
         self._hit_count = None
         self._url = None
         self._doc_url_list = None
-
+        
     def __repr__(self):
         return str(self.response)
 
     def _get_response(self):
-        self._request = requests.get(self.base_url, {'q': self._q,
-                        'tab': self._tab,
-                        'qn': self._qn,
-                        's' : self._s,
-                        'so' : self._so },
-                        timeout=10)
-        if self._request.ok is False:
-            raise SystemError("API response code was not 200-OK")
+
+            self._request = requests.get(self.base_url, {'q': self._q,
+                            'tab': self._tab,
+                            'qn': self._qn,
+                            's' : self._s,
+                            'so' : self._so },
+                            timeout=10)
+
+            if not self._request.ok:
+                raise SystemError("ADAMS response code was not status 200.")
+            
+            self._response_xml_tree = ElementTree.fromstring(self._request.content)
+            
+            #warn on incomplete result set if not expected
+            if self._response_xml_tree.find('count').text == '1000' and self._aes == 1000:
+                Warning("Search exeeded ADAMS max count allowed limit (1000).  Result set is incomplete. Consider auto_expand_search > 1000.")
+
+            self._response_dict = xmltodict.parse(self.response)
+            
+            if self._aes == 1000: 
+                #we're done
+                return 
         
-        self.response_xml_tree = ElementTree.fromstring(self._request.content)
-        
-        #warn on incomplete result set
-        if self.response_xml_tree.find('matches').text == count_exceeded_str:
-            Warning("Search exeeded ADAMS max count allowed limit (1000).  Result set is incomplete.")
+            #process remainder    
+            else:
+                num_docs = 1000
+                
+                #if still under requested amount and there are remaining docs keep looping
+
+                #get last added element from inital ordered dict
+                
+                while num_docs < self._aes and remaining_docs > 0: 
+                    #raise NotImplementedError
+
+                    #reint q with old values and modified properties search types
+                    q = q(properties_search_type= q._properties_search_type, properties_search=q._properties_search.append([['DocumentDate'],['lt'],[oldest_date]]), options = q._options)
+                    
+                    init_req = requests.get(self.base_url, {'q': self._q,
+                                    'tab': self._tab,
+                                    'qn': self._qn,
+                                    's' : self._s,
+                                    'so' : 'DESC'},
+                                    timeout=10)
+                    
+                    if init_req.ok:
+                        #combine next set with original result set dict
+                        remaining_docs = int(ElementTree.fromstring(init_req.content).find('count').text)
+
+                        new_dict = xmltodict.parse(ElementTree.fromstring(init_req)) 
+
+                        self._response_dict.update(new_dict)
+
+                        oldest_date = next(reversed(new_dict))['DocumentDate']
+                
+                    else: 
+                        raise ValueError("Request not successful")
 
     @property
     def response(self):
@@ -89,7 +140,7 @@ class AdamsSearch(object):
                 if doc['MimeType'] == 'application/pdf':
                     # hotlinking to pdf documents by accession number appears to work
                     # https://adamswebsearch2.nrc.gov/webSearch2/main.jsp?AccessionNumber=ML19009A487
-                    doc['URL'] = 'https://adamswebsearch2.nrc.gov/webSearch2/main.jsp?AccessionNumber=' + doc['AccessionNumber']
+                    doc['URL'] = DOC_URL_BASE + doc['AccessionNumber']
             return self._response_dict
         else:
             return self._response_dict
@@ -118,7 +169,7 @@ class AdamsSearch(object):
 class q(object):
     ''' Get data parameters in the form ADAMS needs.
 
-    Attributes:
+    Args:
         filters[string]: 'public' or 'legacy'.  Dict keys to constants.library_keys.  Search library.  Legacy is pre-2000.
         
         options[Options]: Options class instance.
@@ -139,6 +190,14 @@ class q(object):
     '''
     
     def __init__(self, properties_search_type, properties_search, single_content_search = None, options = None, filters = 'public', tab = 'content-search-pars'):
+
+        #store originals for later reconstruction of q parameter
+        self._properties_search_list = properties_search
+        self._properties_search_type = properties_search_type
+        self._single_content_search = single_content_search
+        self._options = options
+        self._filters = filters
+        self._tab = tab
         
         self._value = '(mode:sections,sections:('
         if filters is not None:
@@ -196,7 +255,7 @@ class Options(object):
 
     Object instance call returns a string of the requested options in ADAMS format.
 
-    Attributes:
+    Args:
         Options List: list of options in string format.  
 
         OR 
@@ -242,19 +301,67 @@ class Options(object):
     def __repr__(self):
         return self._options
 
+class ADAMSDoc(object):
+    '''Representation of a document returned from ADAMS.
+
+    Args:
+        adams_doc_dict(dict): Dict where keys are ADAMS XML field tags, and value is the field data.
+    
+    Attributes:
+        MimeType (string): Document MimeType.  Example: application/pdf
+        EstimagedPageCount (int): Estimated Document Page Count
+        Keyword (string): Keywords seperated by comma
+        PackageNumber (int): Package Number
+        Publish Date PARS (date): Date added in WBA
+        DocumentTitle (string): Doc title
+        DocumentType (string): The document type.
+        CompountDocumentState (bool): if true, this is a compound document.
+        Web Address (string): URI for document.  This does not appear to be a user accessible field.
+        Comment (string): Comment property for the document.
+        RelatedDate (date): Related Date
+    '''
+    def __init__(self, adams_doc_dict):
+        self.MimeType = adams_doc_dict['MimeType']
+        self.EstimatedPageCount = adams_doc_dict['EstimatedPageCount']
+        self.CaseReferenceNumber = adams_doc_dict['CaseReferenceNumber']
+        self.ContentSize = adams_doc_dict['ContentSize']
+        self.AuthorAffiliation = adams_doc_dict['AuthorAffiliation']
+        self.Keyword = adams_doc_dict['Keyword']
+        self.DocumentDate = adams_doc_dict['DocumentDate']
+        self.LicenseNumber = adams_doc_dict['LicenseNumber']
+        self.DocketNumber = adams_doc_dict['DocketNumber']
+        self.AccessionNumber = adams_doc_dict['AccessionNumber']
+        self.PackageNumber = adams_doc_dict['PackageNumber']
+        self.PublishDatePARS = adams_doc_dict['PublishDatePARS']
+        self.DocumentTitle = adams_doc_dict['DocumentTitle']
+        self.DocumentReportNumber = adams_doc_dict['DocumentReportNumber']
+        self.DocumentType = adams_doc_dict['DocumentType']
+        self.AuthorName = adams_doc_dict['AuthorName']
+        self.CompoundDocumentState = adams_doc_dict['CompoundDocumentState']
+        self.AddresseeAffilliation = adams_doc_dict['AddresseeAffiliation']
+        self.WebAddress = adams_doc_dict['URI'] # this does not appear to exist in returned searches
+        self.MicroformAddresses = adams_doc_dict['MicroformAddresses']
+        self.Comment = adams_doc_dict['Comment']
+        self.RelatedDate  = adams_doc_dict['RelatedDate']
+        self.AddresseeName = adams_doc_dict['AddresseeName']
+        self.URI_internal = adams_doc_dict['URI']
+        self.URL_document = adams_doc_dict[DOC_URL_BASE + self.AccessionNumber]
+    
+    def __repr__(self):
+        print('Accession:' + self.AccessionNumber + ' ,' + self.DocumentTitle)
+
+
 
 if __name__ == '__main__':
-    print("small tests")
-    print(NRC_BASE_URL)
+    print("Usage Example")
+    
     a = Options()
-    a
 
     b = q(properties_search_type= 'properties_search_any', properties_search=[['DocumentType', 'starts', "'inspection+report'"],
     ['DocketNumber', 'starts', "'05000'"],
     ['DocumentDate', 'range', "(left:'04/01/2013',right:'05/01/2013')"]], options = a)
-    b
-
+    
     x = AdamsSearch(b, 'advanced-search-pars')
-    #print(x.response)
+    
     print(x.url)
     print(x.response_documents[0])
