@@ -37,6 +37,10 @@ library_types = {'public' : 'public-library:!t',
 #API Count exceeded warning message
 count_exceeded_str = "LocalizedMessage{key='search.documents.limit.exceed.message', params=[1000]}"
 
+#document url base
+#base url to access a document by accession number
+DOC_URL_BASE = 'https://adamswebsearch2.nrc.gov/webSearch2/main.jsp?AccessionNumber='
+
 #search fields and operators by property
 #per nrc adams developer guide appendix c
 document_properties = {

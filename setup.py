@@ -34,7 +34,7 @@ setup(
 
     *the . . .field in the result set will be set to 1000.""",
     long_description_content_type="text/markdown",
-    url="https://github.com/bradfox2/nrc_adams_py",
+    url="https://github.com/bradfox2/nrc-adams-py",
     packages=find_packages(),
     test_suite = 'nose.collector',
     test_require = ['nose'],
