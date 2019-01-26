@@ -3,7 +3,7 @@ from nose import with_setup
 
 from nrc_adams_py import core
 from nrc_adams_py.constants import NRC_BASE_URL
-from nrc_adams_py.core import Options, AdamsSearch, q
+from nrc_adams_py.core import AdamsSearch, Options, q
 
 #print("small tests")
 #print(NRC_BASE_URL)

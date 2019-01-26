@@ -1,10 +1,22 @@
-from nrc_adams_py.constants import NRC_BASE_URL, CONTENT_SEARCH, ADVANCED_SEARCH, library_types, count_exceeded_str, document_properties,DOC_URL_BASE
-import nrc_adams_py.constants
-import requests
-from xml.etree import ElementTree
-import xmljson, xmltodict
-import re
 import copy
+import logging
+import re
+from xml.etree import ElementTree
+
+import requests
+import xmljson
+import xmltodict
+
+import nrc_adams_py.constants
+from nrc_adams_py.constants import (ADVANCED_SEARCH, CONTENT_SEARCH,
+                                    DOC_URL_BASE, NRC_BASE_URL,
+                                    count_exceeded_str, document_properties,
+                                    library_types)
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(format='%(asctime)s - %(levelname)s:%(message)s',filename='nrc_adams_py.log', filemode='w', level=logging.DEBUG)
+
+logger.info("Imported.")
 
 class AdamsSearch(object):
     '''A single search to the NRC ADAMS API.
@@ -68,6 +80,7 @@ class AdamsSearch(object):
     def _get_response(self):
         ''' Gets a response from ADAMS and builds an ordered dict with them,  search expanding if requested, by sorting results by document date, and repeatedly iterating, starting with the oldest date.
         '''
+        logger.info("Searching with search parameters %s" % self._q)
         self._request = requests.get(self.base_url, {'q': self._q,
                                                     'tab': self._tab,
                                                     'qn': self._qn,
@@ -87,6 +100,7 @@ class AdamsSearch(object):
         self._response_dict = xmltodict.parse(self._request.content)['search']['resultset']['result']
         
         if self._aes > 1000: 
+            logger.info("Search expanding.")
             num_docs = 1000
             remaining_docs = self._aes - num_docs
             oldest_date = next(reversed(self._response_dict))[self._s]
@@ -173,8 +187,9 @@ class AdamsSearch(object):
     def doc_url_list(self):
         if self._doc_url_list is None:
             self._doc_url_list = [[doc['DocumentTitle'], doc['URL']] for doc in self.response_documents.values()]
+            return self._doc_url_list
         else:
-            self._doc_url_list
+            return self._doc_url_list
 
 class q(object):
     ''' Get data parameters in the form ADAMS needs.
