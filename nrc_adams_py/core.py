@@ -175,6 +175,8 @@ class AdamsSearch(object):
 
     @property
     def hit_count(self):
+        ''' Number of hits on search.
+        '''
         if self._hit_count is None:
             self._hit_count = len(self.response_documents.keys())
             return self._hit_count
@@ -183,6 +185,8 @@ class AdamsSearch(object):
 
     @property
     def doc_url_list(self):
+        '''List of lists consisting of retrieved document title and the direct document URL.
+        '''
         if self._doc_url_list is None:
             self._doc_url_list = [[doc['DocumentTitle'], doc['URL']]
                                   for doc in self.response_documents.values()]
