@@ -1,16 +1,22 @@
-from nrc_adams_py.constants import NRC_BASE_URL, CONTENT_SEARCH, ADVANCED_SEARCH, library_types, count_exceeded_str, document_properties,DOC_URL_BASE
-import nrc_adams_py.constants
-import requests
-from xml.etree import ElementTree
-import xmljson, xmltodict
-import re
+''' Classes encapsulating ADAMS search options and search execution.
+'''
 import copy
+import re
+from xml.etree import ElementTree
+
+import requests
+import xmltodict
+
+from nrc_adams_py.constants import (DOC_URL_BASE, NRC_BASE_URL,
+                                    document_properties,
+                                    library_types)
+
 
 class AdamsSearch(object):
     '''A single search to the NRC ADAMS API.
 
     Args:
-        q (str | q object): ADAMS q parameter either as string or q helper object.  CHR format.  
+        q (str | q object): ADAMS q parameter either as string or q helper object.  CHR format.
 
         qn (str): Name of the query.
 
@@ -34,25 +40,26 @@ class AdamsSearch(object):
         doc_url_list (list): List of lists consisting of retrieved document title and the direct document URL.
     '''
 
-    def __init__(self, q, qn = 'New', s = 'DocumentDate', so = 'DESC', auto_expand_search = 1000):
+    def __init__(self, Q, qn='New', s='DocumentDate', so='DESC', auto_expand_search=1000):
         self._q_og = copy.deepcopy(q)
         if isinstance(q, str):
-            self._q = q.replace(" ","")
-            if 'single_content_search' in q and tab != 'content-search-pars':
-                raise ValueError('Can only content search with defaulted tab value (content-search-pars).')
+            self._q = Q.replace(" ", "")
+            if 'single_content_search' in Q and Q.tab != 'content-search-pars':
+                raise ValueError(
+                    'Can only content search with defaulted tab value (content-search-pars).')
         else:
             self._q = str(q)
-        
-        #date descending to expand search
+
+        # date descending to expand search
         if auto_expand_search <= 1000:
-            self._so = so 
+            self._so = so
             self._aes = 1000
             self._s = s
         else:
             self._so = 'DESC'
             self._aes = auto_expand_search
             self._s = 'DocumentDate'
-        self._tab = q._tab
+        self.tab = Q.tab
         self._qn = qn
         self._request = None
         self.base_url = NRC_BASE_URL
@@ -61,7 +68,7 @@ class AdamsSearch(object):
         self._hit_count = None
         self._url = None
         self._doc_url_list = None
-        
+
     def __repr__(self):
         return str(self.response)
 
@@ -69,69 +76,74 @@ class AdamsSearch(object):
         ''' Gets a response from ADAMS and builds an ordered dict with them,  search expanding if requested, by sorting results by document date, and repeatedly iterating, starting with the oldest date.
         '''
         self._request = requests.get(self.base_url, {'q': self._q,
-                                                    'tab': self._tab,
-                                                    'qn': self._qn,
-                                                    's' : self._s,
-                                                    'so' : self._so },
-                                                    timeout=10)
+                                                     'tab': self.tab,
+                                                     'qn': self._qn,
+                                                     's': self._s,
+                                                     'so': self._so},
+                                     timeout=10)
 
         if not self._request.ok:
             raise SystemError("ADAMS response code was not status 200.")
-        
+
         self._response_xml_tree = ElementTree.fromstring(self._request.content)
-        
-        #warn on incomplete result set if not expected
+
+        # warn on incomplete result set if not expected
         if self._response_xml_tree.find('matches').text == "LocalizedMessage{key='search.documents.limit.exceed.message', params=[1000]}" and self._aes == 1000:
             Warning("Search exeeded ADAMS max count allowed limit (1000).  Result set is incomplete. Consider auto_expand_search > 1000.")
 
-        self._response_dict = xmltodict.parse(self._request.content)['search']['resultset']['result']
-        
-        if self._aes > 1000: 
+        self._response_dict = xmltodict.parse(self._request.content)[
+            'search']['resultset']['result']
+
+        if self._aes > 1000:
             num_docs = 1000
             remaining_docs = self._aes - num_docs
             oldest_date = next(reversed(self._response_dict))[self._s]
 
-            #if still under requested amount and there are remaining docs keep looping
+            # if still under requested amount and there are remaining docs keep looping
 
-            #get last added element from inital ordered dict
-            
-            while num_docs < self._aes and remaining_docs > 0: 
+            # get last added element from inital ordered dict
+
+            while num_docs < self._aes and remaining_docs > 0:
                 #raise NotImplementedError
 
-                #reint q with old values and modified properties search types
-                self._q_og._properties_search_type_all =[[str(self._s),'lt',"'" + oldest_date + "'"]]
+                # reint q with old values and modified properties search types
+                self._q_og.properties_search_type_all = [
+                    [str(self._s), 'lt', "'" + oldest_date + "'"]]
 
-                q_new = q(properties_search_type_any = self._q_og._properties_search_type_any, properties_search_type_all = self._q_og._properties_search_type_all, options = self._q_og._options, tab=self._q_og._tab)
-                
+                q_new = q(properties_search_type_any=self._q_og.properties_search_type_any,
+                          properties_search_type_all=self._q_og.properties_search_type_all, options=self._q_og.options, tab=self._q_og.tab)
+
                 init_req = requests.get(self.base_url, {'q': q_new,
-                                'tab': self._tab,
-                                'qn': self._qn,
-                                's' : self._s,
-                                'so' : 'DESC'},
-                                timeout=100)
-                
-                if init_req.ok:
-                    #combine next set with original result set dict
-                    remaining_docs = int(ElementTree.fromstring(init_req.content).find('count').text)
+                                                        'tab': self.tab,
+                                                        'qn': self._qn,
+                                                        's': self._s,
+                                                        'so': 'DESC'},
+                                        timeout=100)
 
-                    new_dict = xmltodict.parse(init_req.content)['search']['resultset']['result'] 
+                if init_req.ok:
+                    # combine next set with original result set dict
+                    remaining_docs = int(ElementTree.fromstring(
+                        init_req.content).find('count').text)
+
+                    new_dict = xmltodict.parse(init_req.content)[
+                        'search']['resultset']['result']
 
                     self._response_dict.extend(new_dict)
-                    
+
                     oldest_date = next(reversed(new_dict))[self._s]
-                    
+
                     num_docs += remaining_docs
-            
-                else: 
+
+                else:
                     raise ValueError("Request not successful")
-        
+
         temp_dict = {}
 
         for doc in self._response_dict:
             if doc['MimeType'] == 'application/pdf':
                 # hotlinking to pdf documents by accession number appears to work
                 # https://adamswebsearch2.nrc.gov/webSearch2/main.jsp?AccessionNumber=ML19009A487
-                doc['URL'] = DOC_URL_BASE + doc['AccessionNumber']    
+                doc['URL'] = DOC_URL_BASE + doc['AccessionNumber']
             temp_dict[doc['AccessionNumber']] = doc
         self._response_dict = temp_dict
 
@@ -142,11 +154,11 @@ class AdamsSearch(object):
         else:
             self._get_response()
             return self._request.content
-    
+
     @property
     def url(self):
         if self._request is None:
-            self.response
+            self._get_response()
             return self._request.url
         else:
             return self._request.url
@@ -160,7 +172,7 @@ class AdamsSearch(object):
             return self._response_dict
         else:
             return self._response_dict
-    
+
     @property
     def hit_count(self):
         if self._hit_count is None:
@@ -168,20 +180,24 @@ class AdamsSearch(object):
             return self._hit_count
         else:
             return self._hit_count
-    
+
     @property
     def doc_url_list(self):
         if self._doc_url_list is None:
-            self._doc_url_list = [[doc['DocumentTitle'], doc['URL']] for doc in self.response_documents.values()]
+            self._doc_url_list = [[doc['DocumentTitle'], doc['URL']]
+                                  for doc in self.response_documents.values()]
+            return self._doc_url_list
         else:
-            self._doc_url_list
+            return self._doc_url_list
+            
+
 
 class q(object):
     ''' Get data parameters in the form ADAMS needs.
 
     Args:
         filters[string]: 'public' or 'legacy'.  Dict keys to constants.library_keys.  Search library.  Legacy is pre-2000.
-        
+
         options[Options]: Options class instance.
 
         properties_search_type_any[list]: Search match any of the provided criteria.  List of lists where inner list is 3 elements. eg [[<property>, <operator>, <value>], ...].  The type/operator combinations are documented under nrc_adams_py.constants.document_properties
@@ -198,16 +214,16 @@ class q(object):
 
     '''
 
-    def __init__(self, properties_search_type_any = None, properties_search_type_all = None, single_content_search = None, options = None, filters = 'public', tab = 'content-search-pars'):
+    def __init__(self, properties_search_type_any=None, properties_search_type_all=None, single_content_search=None, options=None, filters='public', tab='content-search-pars'):
 
-        #store originals for later reconstruction of q parameter
-        self._properties_search_type_any = properties_search_type_any
-        self._properties_search_type_all = properties_search_type_all
+        # store originals for later reconstruction of q parameter
+        self.properties_search_type_any = properties_search_type_any
+        self.properties_search_type_all = properties_search_type_all
         self._single_content_search = single_content_search
-        self._options = options
+        self.options = options
         self._filters = filters
-        self._tab = tab
-        
+        self.tab = tab
+
         self._value = '(mode:sections,sections:('
         if filters is not None:
             if filters in library_types.keys():
@@ -215,33 +231,38 @@ class q(object):
                 self._value += self._filters
 
         if options is None:
-            raise Warning('Options needs to be an instance of Options if an advanced search is being performed. Content search will support a null options field')
+            raise Warning(
+                'Options needs to be an instance of Options if an advanced search is being performed. Content search will support a null options field')
         else:
             self._value += str(options)
 
-        #validate one of the search types was passed 
+        # validate one of the search types was passed
         if (properties_search_type_any is None and properties_search_type_all is None):
-            raise ValueError("One of the properties search types needs to be passed.")
+            raise ValueError(
+                "One of the properties search types needs to be passed.")
 
-        for search_type, search_type_parameter_list in zip(['properties_search_all:!(', 'properties_search_any:!('],[properties_search_type_all, properties_search_type_any]):
+        for search_type, search_type_parameter_list in zip(['properties_search_all:!(', 'properties_search_any:!('], [properties_search_type_all, properties_search_type_any]):
 
             if search_type_parameter_list is not None:
-                self._value += search_type 
-                self._value += build_properties_search_string(search_type_parameter_list, self._tab) + ")"
+                self._value += search_type
+                self._value += build_properties_search_string(
+                    search_type_parameter_list, self.tab) + ")"
 
                 if search_type == 'properties_search_all:!(':
-                    self._value += ','        
-                
-        if single_content_search is not None:
-            self._value += ",single_content_search:'" + re.sub(' ','+',single_content_search)
+                    self._value += ','
 
-        #close the mode section parens and the q parens
+        if single_content_search is not None:
+            self._value += ",single_content_search:'" + \
+                re.sub(' ', '+', single_content_search)
+
+        # close the mode section parens and the q parens
         self._value += ')' + ')'
 
     def __repr__(self):
         return self._value
 
     #value = '''(mode:sections,sections:(filters:(public-library:!t),properties_search:!(!('$title',infolder,'Browns+Ferry','')),properties_search_any:!(!(DocumentType,ends,NUREG,''),!(DocumentType,ends,'NUREG+REPORTS','')),single_content_search:'steam+generator'))'''
+
 
 def build_properties_search_string(properties_search_list, tab):
     ''' Assemble the properties portion of the data parameters search string.
@@ -252,24 +273,27 @@ def build_properties_search_string(properties_search_list, tab):
         tab (string): Search type parameter.  See docs for q class.
     '''
     ss = ''
-    
-    for i, inner  in enumerate(properties_search_list):
+
+    for i, inner in enumerate(properties_search_list):
         temp_value = ''
         if inner[0] not in document_properties.keys():
-            raise ValueError("document property must be one of the specified document properties in document_properties list")
+            raise ValueError(
+                "document property must be one of the specified document properties in document_properties list")
 
-        #check search operator against document properties/seach op dict
+        # check search operator against document properties/seach op dict
         if inner[1] not in document_properties[inner[0]][tab]:
-            raise ValueError("Search operator must be one of the specified search operators.")
-        #dont add trailing comma at end of list
+            raise ValueError(
+                "Search operator must be one of the specified search operators.")
+        # dont add trailing comma at end of list
         if i + 1 == len(properties_search_list):
-            temp_value += build_property_string(inner) 
+            temp_value += build_property_string(inner)
         else:
             temp_value += build_property_string(inner) + ","
 
         ss += temp_value
 
     return(ss)
+
 
 def build_property_string(prop_list):
     '''Assemble the lower level data parameter properties string from a single list entry.
@@ -279,18 +303,19 @@ def build_property_string(prop_list):
     '''
     return '!(' + ','.join(prop_list) + ",'')"
 
+
 class Options(object):
     '''Options parameter in ADAMS form.
-    
-    Provide an options_list OR the remainder of the arguments to define a set of options. 
 
+    Provide an options_list OR the remainder of the arguments to define a set of options.
+    
     Object instance call returns a string of the requested options in ADAMS format.
 
     Args:
         Options List: list of options in string format.  
 
         OR 
-        
+
         Choose one of:
         added_this_month [bool]
         added_this_day [bool]
@@ -299,20 +324,22 @@ class Options(object):
 
         subfolder_path [string]: Absolute reference to the folder path in the document library.  See NRC guide for more detail. 
     '''
-    def __init__(self, options_list = [], added_this_month = False, added_this_day = False, subfolder_path = None):
-        
-        self._options = None
-        
-        #pass list back as options string
+
+    def __init__(self, options_list, added_this_month=False, added_this_day=False, subfolder_path=None):
+
+        self.options = None
+
+        # pass list back as options string
         if options_list and len(options_list) > 1:
             ol_str = ','.join(options_list)
-            self._options = 'options:(' + ol_str + '),'
-        
-        #process remainder of params into a list, and then join to options string
+            self.options = 'options:(' + ol_str + '),'
+
+        # process remainder of params into a list, and then join to options string
         self.options_list = []
-        
+
         if added_this_month & added_this_day:
-            raise ValueError('Only added_this_month or added_this_day can be true.')
+            raise ValueError(
+                'Only added_this_month or added_this_day can be true.')
         else:
             if added_this_day:
                 self.options_list.append('added-this-day')
@@ -320,24 +347,26 @@ class Options(object):
                 self.options_list.append('added-this-month')
 
         if subfolder_path is not None:
-            self._subfolder_path = "within-folder:(enable:!t,insubfolder:!t,path:'" + subfolder_path + "')"
+            self._subfolder_path = "within-folder:(enable:!t,insubfolder:!t,path:'" + \
+                subfolder_path + "')"
             self.options_list.append(self._subfolder_path)
         else:
             self._subfolder_path = "within-folder:(enable:!f,insubfolder:!f,path:'')"
             self.options_list.append(self._subfolder_path)
 
         ol_str = ','.join(self.options_list)
-        self._options = self._options = 'options:(' + ol_str + '),'
-    
+        self.options = self.options = 'options:(' + ol_str + '),'
+
     def __repr__(self):
-        return self._options
+        return self.options
+
 
 class ADAMSDoc(object):
     '''Not Utilized. Representation of a document returned from ADAMS.
 
     Args:
         adams_doc_dict(dict): Dict where keys are ADAMS XML field tags, and value is the field data.
-    
+
     Attributes:
         MimeType (string): Document MimeType.  Example: application/pdf
         EstimagedPageCount (int): Estimated Document Page Count
@@ -351,6 +380,7 @@ class ADAMSDoc(object):
         Comment (string): Comment property for the document.
         RelatedDate (date): Related Date
     '''
+
     def __init__(self, adams_doc_dict):
         self.MimeType = adams_doc_dict['MimeType']
         self.EstimatedPageCount = adams_doc_dict['EstimatedPageCount']
@@ -370,28 +400,30 @@ class ADAMSDoc(object):
         self.AuthorName = adams_doc_dict['AuthorName']
         self.CompoundDocumentState = adams_doc_dict['CompoundDocumentState']
         self.AddresseeAffilliation = adams_doc_dict['AddresseeAffiliation']
-        self.WebAddress = adams_doc_dict['URI'] # this does not appear to exist in returned searches
+        # this does not appear to exist in returned searches
+        self.WebAddress = adams_doc_dict['URI']
         self.MicroformAddresses = adams_doc_dict['MicroformAddresses']
         self.Comment = adams_doc_dict['Comment']
-        self.RelatedDate  = adams_doc_dict['RelatedDate']
+        self.RelatedDate = adams_doc_dict['RelatedDate']
         self.AddresseeName = adams_doc_dict['AddresseeName']
         self.URI_internal = adams_doc_dict['URI']
         self.URL_document = adams_doc_dict[DOC_URL_BASE + self.AccessionNumber]
-    
+
     def __repr__(self):
         print('Accession:' + self.AccessionNumber + ' ,' + self.DocumentTitle)
 
+
 if __name__ == '__main__':
     print("Usage Example")
-    
-    a = Options()
+
+    a = Options(options_list=[])
 
     b = q(properties_search_type_any=[['DocumentType', 'starts', "'inspection+report'"],
-    ['DocketNumber', 'starts', "'05000'"],
-    ['DocumentDate', 'range', "(left:'04/01/2013',right:'05/01/2013')"]], options = a, tab='advanced-search-pars')
-    
-    x = AdamsSearch(b, auto_expand_search = 1000)
-    
+                                      ['DocketNumber', 'starts', "'05000'"],
+                                      ['DocumentDate', 'range', "(left:'04/01/2013',right:'05/01/2013')"]], options=a, tab='advanced-search-pars')
+
+    x = AdamsSearch(b, auto_expand_search=1000)
+
     print(x.url)
     print(len(x.response_documents))
     print(x.response_documents[0])
