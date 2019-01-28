@@ -284,7 +284,6 @@ def build_property_string(prop_list):
     Args:
         prop_list (list): List of document search properties. See Example for q class.
     '''
-    prop_list[2] = "'" + prop_list[2] + "'"
     return '!(' + ','.join(prop_list) + ",'')"
 
 class Options(object):
@@ -395,7 +394,9 @@ if __name__ == '__main__':
     a = Options()
 
     b = q(properties_search_type_any=[
-    ['AddresseeAffiliation', 'eq', 'Arizona Public Service Co, (Formerly Arizona Nuclear)']
+    ['AddresseeAffiliation', 'eq', "'Arizona Public Service Co, (Formerly Arizona Nuclear)'"],
+    ['AddresseeAffiliation', 'eq', "'Arizona Public Service Co'"],
+    ['AddresseeAffiliation', 'eq', "'Arizona Public Service Co, (Formerly Arizona Nuclear)'"]
     ], options = a, tab='advanced-search-pars')
     
     x = AdamsSearch(b, auto_expand_search = 2000)
