@@ -3,7 +3,7 @@ from nose import with_setup
 
 from nrc_adams_py import core
 from nrc_adams_py.constants import NRC_BASE_URL
-from nrc_adams_py.core import Options, AdamsSearch, q
+from nrc_adams_py.core import Options, AdamsSearch, q, build_properties_search_string, build_property_string
 
 #print("small tests")
 #print(NRC_BASE_URL)
@@ -14,19 +14,32 @@ def setup_func():
 def teardown_func():
     pass
 
+def test_build_property_string():
+    x = str(build_property_string(['AddresseeAffiliation', 'eq', "Arizona Nuclear Power Project"]))
+
+    assert x == "!(AddresseeAffiliation,eq,Arizona Nuclear Power Project,'')"
+
+def test_build_properties_search_string():
+    x = str(build_properties_search_string([
+    ['AddresseeAffiliation', 'eq', "'Arizona Nuclear Power Project'"],
+    ['AddresseeAffiliation', 'eq', "'Arizona Public Service Co'"],
+    ['AddresseeAffiliation', 'eq', "'Arizona Public Service Co, (Formerly Arizona Nuclear)'"]], 'advanced-search-pars'))
+
+    assert x == "!(AddresseeAffiliation,eq,'Arizona Nuclear Power Project',''),!(AddresseeAffiliation,eq,'Arizona Public Service Co',''),!(AddresseeAffiliation,eq,'Arizona Public Service Co, (FormerlyArizona Nuclear)','')"
+
 def testOptions():
-    a = Options()
+    a = Options(options_list=[])
     assert str(a) == "options:(within-folder:(enable:!f,insubfolder:!f,path:'')),"
 @with_setup(setup_func, teardown_func)
 def testQ():
     b = q(properties_search_type_any=[['DocumentType', 'starts', "'inspection+report'"],
     ['DocketNumber', 'starts', "'05000'"],
-    ['DocumentDate', 'range', "(left:'04/01/2013',right:'05/01/2013')"]], options = Options(), tab='advanced-search-pars')
+    ['DocumentDate', 'range', "(left:'04/01/2013',right:'05/01/2013')"]], options = Options(options_list=[]), tab='advanced-search-pars')
     
     assert str(b) == "(mode:sections,sections:(filters:(public-library:!t),options:(within-folder:(enable:!f,insubfolder:!f,path:'')),properties_search_any:!(!(DocumentType,starts,'inspection+report',''),!(DocketNumber,starts,'05000',''),!(DocumentDate,range,(left:'04/01/2013',right:'05/01/2013'),''))))"
 
 def testAdamsSearch():
-    b = q(properties_search_type_any=[['DocumentType', 'starts', "'inspection+report'"],['DocketNumber', 'starts', "'05000'"],['DocumentDate', 'range', "(left:'04/01/2013',right:'05/01/2013')"]], options = Options(),tab='advanced-search-pars')
+    b = q(properties_search_type_any=[['DocumentType', 'starts', "'inspection+report'"],['DocketNumber', 'starts', "'05000'"],['DocumentDate', 'range', "(left:'04/01/2013',right:'05/01/2013')"]], options = Options(options_list=[]),tab='advanced-search-pars')
 
     x = AdamsSearch(b)
     
@@ -40,7 +53,7 @@ def testAdamsSearch():
 
 if __name__ == '__main__':
     
-    b = q(properties_search_type_any=[['DocumentType', 'starts', "'inspection+report'"],['DocketNumber', 'starts', "'05000'"],['DocumentDate', 'range', "(left:'04/01/2013',right:'05/01/2013')"]], options = Options(), tab = 'advanced-search-pars')
+    b = q(properties_search_type_any=[['DocumentType', 'starts', "'inspection+report'"],['DocketNumber', 'starts', "'05000'"],['DocumentDate', 'range', "(left:'04/01/2013',right:'05/01/2013')"]], options = Options(options_list=[]), tab = 'advanced-search-pars')
         
     x = AdamsSearch(b,so= '$title')
     print(list(x.response_documents)[0])
