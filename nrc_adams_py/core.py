@@ -61,6 +61,7 @@ class AdamsSearch(object):
         self._hit_count = None
         self._url = None
         self._doc_url_list = None
+        self._full_response_dict = None
         
     def __repr__(self):
         return str(self.response)
@@ -84,9 +85,14 @@ class AdamsSearch(object):
         if self._response_xml_tree.find('matches').text == "LocalizedMessage{key='search.documents.limit.exceed.message', params=[1000]}" and self._aes == 1000:
             Warning("Search exeeded ADAMS max count allowed limit (1000).  Result set is incomplete. Consider auto_expand_search > 1000.")
 
-        self._response_dict = xmltodict.parse(self._request.content)['search']['resultset']['result']
+        self._full_response_dict = xmltodict.parse(self._request.content)
+
+        self._response_dict = self._full_response_dict['search']['resultset']['result']
+
+        self._temp_count = int(self._full_response_dict['search']['count'])
         
-        if self._aes > 1000: 
+        #continue expansion if count < 1000 
+        if self._aes > 1000 and self._temp_count >= 1000:  
             num_docs = 1000
             remaining_docs = self._aes - num_docs
             oldest_date = next(reversed(self._response_dict))[self._s]
@@ -184,7 +190,7 @@ class q(object):
         
         options[Options]: Options class instance.
 
-        properties_search_type_any[list]: Search match any of the provided criteria.  List of lists where inner list is 3 elements. eg [[<property>, <operator>, <value>], ...].  The type/operator combinations are documented under nrc_adams_py.constants.document_properties
+        properties_search_type_any[list]: Search match any of the provided criteria.  List of lists where inner list is 3 elements. eg [[<property>, <operator>, <value>], ...].  The type/operator combinations are documented under nrc_adams_py.constants.document_properties.  
 
         properties_search_type_all[list]: Search match all of the provided criteria. List of lists where inner list is 3 elements. eg [[<property>, <operator>, <value>], ...].  The type/operator combinations are documented under nrc_adams_py.constants.document_properties
 
@@ -278,6 +284,7 @@ def build_property_string(prop_list):
     Args:
         prop_list (list): List of document search properties. See Example for q class.
     '''
+    prop_list[2] = "'" + prop_list[2] + "'"
     return '!(' + ','.join(prop_list) + ",'')"
 
 class Options(object):
@@ -388,9 +395,7 @@ if __name__ == '__main__':
     a = Options()
 
     b = q(properties_search_type_any=[
-    ['AddresseeAffiliation', 'eq', "'Arizona Public Service Co, (Formerly Arizona Nuclear)'"],
-    ['AddresseeAffiliation', 'eq', "'Arizona Public Service Co'"],
-    ['AddresseeAffiliation', 'eq', "'Arizona Public Service Co, (Formerly Arizona Nuclear)'"]
+    ['AddresseeAffiliation', 'eq', 'Arizona Public Service Co, (Formerly Arizona Nuclear)']
     ], options = a, tab='advanced-search-pars')
     
     x = AdamsSearch(b, auto_expand_search = 2000)
