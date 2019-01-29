@@ -1,13 +1,20 @@
-from nrc_adams_py.constants import NRC_BASE_URL, CONTENT_SEARCH, ADVANCED_SEARCH, library_types, count_exceeded_str, document_properties,DOC_URL_BASE
-import nrc_adams_py.constants
-import requests
-from xml.etree import ElementTree
-import xmljson, xmltodict
-import re
 import copy
+import re
+from xml.etree import ElementTree
+
+import requests
+import xmljson
+import xmltodict
+
+import nrc_adams_py.constants
+from nrc_adams_py.constants import (ADVANCED_SEARCH, CONTENT_SEARCH,
+                                    DOC_URL_BASE, NRC_BASE_URL,
+                                    count_exceeded_str, document_properties,
+                                    library_types)
+
 
 class AdamsSearch(object):
-    '''A single search to the NRC ADAMS API.
+    '''A single search to the NRC ADAMS API.  API appears to be able to process a request for 1000 docs in around 6 seconds.
 
     Args:
         q (str | q object): ADAMS q parameter either as string or q helper object.  CHR format.  
@@ -38,7 +45,7 @@ class AdamsSearch(object):
         self._q_og = copy.deepcopy(q)
         if isinstance(q, str):
             self._q = q.replace(" ","")
-            if 'single_content_search' in q and tab != 'content-search-pars':
+            if 'single_content_search' in q and q._tab != 'content-search-pars':
                 raise ValueError('Can only content search with defaulted tab value (content-search-pars).')
         else:
             self._q = str(q)
@@ -74,7 +81,7 @@ class AdamsSearch(object):
                                                     'qn': self._qn,
                                                     's' : self._s,
                                                     'so' : self._so },
-                                                    timeout=10)
+                                                    timeout=100)
 
         if not self._request.ok:
             raise SystemError("ADAMS response code was not status 200.")
@@ -89,21 +96,17 @@ class AdamsSearch(object):
 
         self._response_dict = self._full_response_dict['search']['resultset']['result']
 
-        self._temp_count = int(self._full_response_dict['search']['count'])
-        
-        #continue expansion if count < 1000 
-        if self._aes > 1000 and self._temp_count >= 1000:  
+        self._fetched_doc_count = int(self._full_response_dict['search']['count']) 
+
+        #continue expansion if count == 1000 
+        if self._aes > 1000 and self._fetched_doc_count == 1000:  
             num_docs = 1000
             remaining_docs = self._aes - num_docs
             oldest_date = next(reversed(self._response_dict))[self._s]
 
-            #if still under requested amount and there are remaining docs keep looping
-
-            #get last added element from inital ordered dict
+            #if still under requested amount and the last fetch brought back 1000 docs, keep looping
             
-            while num_docs < self._aes and remaining_docs > 0: 
-                #raise NotImplementedError
-
+            while num_docs < self._aes and self._fetched_doc_count == 1000: 
                 #reint q with old values and modified properties search types
                 self._q_og._properties_search_type_all =[[str(self._s),'lt',"'" + oldest_date + "'"]]
 
@@ -118,7 +121,7 @@ class AdamsSearch(object):
                 
                 if init_req.ok:
                     #combine next set with original result set dict
-                    remaining_docs = int(ElementTree.fromstring(init_req.content).find('count').text)
+                    self._fetched_doc_count = int(ElementTree.fromstring(init_req.content).find('count').text)
 
                     new_dict = xmltodict.parse(init_req.content)['search']['resultset']['result'] 
 
@@ -126,7 +129,7 @@ class AdamsSearch(object):
                     
                     oldest_date = next(reversed(new_dict))[self._s]
                     
-                    num_docs += remaining_docs
+                    num_docs += self._fetched_doc_count
             
                 else: 
                     raise ValueError("Request not successful")
@@ -170,7 +173,7 @@ class AdamsSearch(object):
     @property
     def hit_count(self):
         if self._hit_count is None:
-            self._hit_count = len(self.response_documents.keys())
+            self._hit_count = len(self.response_documents)
             return self._hit_count
         else:
             return self._hit_count
@@ -178,10 +181,14 @@ class AdamsSearch(object):
     @property
     def doc_url_list(self):
         if self._doc_url_list is None:
+            if len(self.response_documents) == 1:
+                self._doc_url_list = [[self.response_documents['DocumentTitle'], self.response_documentsp['URL']]]
+                return self._doc_url_list
             self._doc_url_list = [[doc['DocumentTitle'], doc['URL']] for doc in self.response_documents.values()]
+            return self._doc_url_list
         else:
-            self._doc_url_list
-
+            return self._doc_url_list
+            
 class q(object):
     ''' Get data parameters in the form ADAMS needs.
 
@@ -399,8 +406,9 @@ if __name__ == '__main__':
     ['AddresseeAffiliation', 'eq', "'Arizona Public Service Co, (Formerly Arizona Nuclear)'"]
     ], options = a, tab='advanced-search-pars')
     
-    x = AdamsSearch(b, auto_expand_search = 2000)
+    x = AdamsSearch(b, auto_expand_search = 10000)
     
     print(x.url)
     print(len(x.response_documents))
-    print(x.response_documents.keys())
+    #print(x.response_documents.keys())
+    #print(x.doc_url_list)
