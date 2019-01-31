@@ -12,7 +12,6 @@ from nrc_adams_py.constants import (ADVANCED_SEARCH, CONTENT_SEARCH,
                                     count_exceeded_str, document_properties,
                                     library_types)
 
-
 class AdamsSearch(object):
     '''A single search to the NRC ADAMS API.  API appears to be able to process a request for 1000 docs in around 6 seconds.
 
@@ -412,3 +411,4 @@ if __name__ == '__main__':
     print(len(x.response_documents))
     #print(x.response_documents.keys())
     #print(x.doc_url_list)
+
