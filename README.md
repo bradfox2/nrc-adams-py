@@ -1,6 +1,6 @@
 # nrc-adams-py
 
-Class for Python Interaction with NRC Adams API.
+Module for Python Interaction with NRC Adams API.
 
 https://www.nrc.gov/site-help/developers/wba-api-developer-guide.pdf
 
