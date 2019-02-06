@@ -83,9 +83,7 @@ class AdamsSearch(object):
             Warning("Search exeeded ADAMS max count allowed limit (1000).  Result set is incomplete. Consider auto_expand_search > 1000.")
 
         self._full_response_dict = xmltodict.parse(self._request.content)
-
         self._response_dict = self._full_response_dict['search']['resultset']['result']
-
         self._fetched_doc_count = int(self._full_response_dict['search']['count']) 
 
         #continue expansion if count == 1000 
@@ -112,13 +110,9 @@ class AdamsSearch(object):
                 if init_req.ok:
                     #combine next set with original result set dict
                     self._fetched_doc_count = int(ElementTree.fromstring(init_req.content).find('count').text)
-
                     new_dict = xmltodict.parse(init_req.content)['search']['resultset']['result'] 
-
                     self._response_dict.extend(new_dict)
-                    
                     oldest_date = next(reversed(new_dict))[self._s]
-                    
                     num_docs += self._fetched_doc_count
             
                 else: 
@@ -247,7 +241,6 @@ def build_properties_search_string(properties_search_list, tab):
 
     Args:
         properties_search_list (list): List of the document search properties.  See docs for q class.
-
         tab (string): Search type parameter.  See docs for q class.
     '''
     ss = ''
