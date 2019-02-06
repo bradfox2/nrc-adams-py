@@ -17,26 +17,17 @@ class AdamsSearch(object):
 
     Args:
         q (str | q object): ADAMS q parameter either as string or q helper object.  CHR format.  
-
         qn (str): Name of the query.
-
         s (str): Property name by which the result set will be sorted.
-
         so (str): Sort order. `ASC`|`DESC`
-
         base_url (str): ADAMS base url, imported from constants.py.
-
         auto_expand_search (int): 1000 < n < (high limit not enforced for now) Number of search results to return. Automatically expand the search result beyond the NRC imposed limit of 1000 entries.
 
     Attributes:
         response (string): String response from the http request. 
-
         url (string): Formatted search URL for HTTP GET request.
-
         response_documents (dict): Dict of the Response documents where k:v = AccessionNumber:OrderedDictDoct Object where keys are field names.  Documents are only those of PDF type.
-
         hit_count (int): Number of documents returned.
-
         doc_url_list (list): List of lists consisting of retrieved document title and the direct document URL.
     '''
 
@@ -193,15 +184,10 @@ class q(object):
 
     Args:
         filters[string]: 'public' or 'legacy'.  Dict keys to constants.library_keys.  Search library.  Legacy is pre-2000.
-        
         options[Options]: Options class instance.
-
         properties_search_type_any[list]: Search match any of the provided criteria.  List of lists where inner list is 3 elements. eg [[<property>, <operator>, <value>], ...].  The type/operator combinations are documented under nrc_adams_py.constants.document_properties.  
-
         properties_search_type_all[list]: Search match all of the provided criteria. List of lists where inner list is 3 elements. eg [[<property>, <operator>, <value>], ...].  The type/operator combinations are documented under nrc_adams_py.constants.document_properties
-
         single_content_search [str]: Search terms matched to document content.
-
         tab [str]: Type of search to perform, either `content-search-pars` or `advanced-search-pars`.  Content search is defaulted, and is used to search for matches inside of library documents, which is via the `single_content_search` sub-parameter in the q parameter.  Else the advanced search will be used.
 
     Example:
