@@ -4,7 +4,7 @@ Module for Python Interaction with NRC Adams API.
 
 https://www.nrc.gov/site-help/developers/wba-api-developer-guide.pdf
 
-ADAMS API Official NRC Description:
+ADAMS API NRC Description:
 
 Adams.nrc.gov contains hundreds of thousands of full-text documents that the NRC has released since November 1, 1999, and several hundred new documents are added each day.
 
