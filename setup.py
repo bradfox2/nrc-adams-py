@@ -10,7 +10,7 @@ setup(
     name="nrc_adams_py",
     version="0.0.3",
     author="Brad Fox",
-    author_email="bradley.fox@avfintellitech.com",
+    author_email="bradfox2@gmail.com",
     description="Python Class connect to NRC ADAMS API",
     long_description=long_description,
     long_description_content_type="text/markdown",
