@@ -1,7 +1,10 @@
-# nrc-adams-py
+# NO LONGER MAINTED - COMMERCIAL VERSIONS AVAILABLE
 
 Module for Python Interaction with NRC Adams API.
 
-This is no longer maintained - Newer versions are available for licensing from Nuclearn, Inc. 
+This is no longer maintained
 
-Please contact contact@nuclearn.ai
+# COMMERCIAL NRC ADAMS SCRAPING
+A production ready ADAMS scraping code is available for licensing from Nuclearn, Inc. 
+
+Please reach out at contact@nuclearn.ai if you are interesed 
